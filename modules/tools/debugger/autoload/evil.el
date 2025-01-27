@@ -8,7 +8,7 @@
   ;; TODO Add python debugging
   (let ((default-directory (doom-project-root)))
     (pcase major-mode
-      ((or 'c-mode 'c++-mode)
+      ((or 'c-mode 'c++-mode 'zig-mode)
        (realgud:gdb (if path (concat "gdb " path))))
       ('ruby-mode
        ;; FIXME

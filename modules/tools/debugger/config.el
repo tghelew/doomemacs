@@ -17,7 +17,9 @@
     (realgud:zshdb     :modes (sh-mode))))
 
 (defvar +debugger--dap-alist
-  `(((:lang cc +lsp)         :after ccls        :require (dap-lldb dap-gdb-lldb))
+  `(
+    ((:lang zig +lsp)        :after zls         :require (dap-lldb dap-gdb-lldb))
+    ((:lang cc +lsp)         :after ccls        :require (dap-lldb dap-gdb-lldb))
     ((:lang elixir +lsp)     :after elixir-mode :require dap-elixir)
     ((:lang go +lsp)         :after go-mode     :require dap-dlv-go)
     ((:lang gdscript +lsp)   :after gdscript-mode :require dap-gdscript)
