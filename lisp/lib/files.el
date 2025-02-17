@@ -494,9 +494,12 @@ If FORCE-P, overwrite the destination file if it exists, without confirmation."
                               (concat user "@" host)
                             host)
                           "|"))
-            "sudo:root@" host
-            ":" (or (file-remote-p file 'localname)
-                    file))))
+    (concat (if (executable-find "doas")
+                "doas"
+              else "sudo")
+      ":root@") host
+    ":" (or (file-remote-p file 'localname)
+            file))))
 
 ;;;###autoload
 (defun doom/sudo-find-file (file &optional arg)
