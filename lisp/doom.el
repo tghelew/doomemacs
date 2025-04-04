@@ -132,6 +132,13 @@
 (defconst doom--system-macos-p   (eq 'macos   (car doom-system)))
 (defconst doom--system-linux-p   (eq 'linux   (car doom-system)))
 
+;; Announce WSL if it is detected.
+(when (and doom--system-linux-p
+           (if (boundp 'operating-system-release) ; is deprecated since 28.x
+               (string-match-p "-[Mm]icrosoft" operating-system-release)
+             (getenv-internal "WSLENV")))
+  (add-to-list 'doom-system 'wsl 'append))
+
 ;; `system-type' is esoteric, so I create a pseudo feature as a stable and
 ;; consistent alternative, for use with `featurep'.
 (push :system features)
@@ -217,7 +224,7 @@
   "Current version of Doom Emacs core.")
 
 ;; DEPRECATED: Remove these when the modules are moved out of core.
-(defconst doom-modules-version "25.03.0-pre"
+(defconst doom-modules-version "25.05.0-pre"
   "Current version of Doom Emacs.")
 
 (defvar doom-init-time nil
@@ -701,11 +708,12 @@ to `doom-profile-cache-dir' instead, so it can be safely cleaned up as part of
   (setq package-user-dir (file-name-concat doom-local-dir "elpa/")
         package-gnupghome-dir (expand-file-name "gpg" package-user-dir))
   (let ((s (if gnutls-verify-error "s" "")))
-    (prependq! package-archives
-               ;; I omit Marmalade because its packages are manually submitted
-               ;; rather than pulled, and so often out of date.
-               `(("melpa" . ,(format "http%s://melpa.org/packages/" s))
-                 ("org"   . ,(format "http%s://orgmode.org/elpa/"   s)))))
+    (cl-callf2 append
+        ;; I omit Marmalade because its packages are manually submitted rather
+        ;; than pulled, and so often out of date.
+        `(("melpa" . ,(format "http%s://melpa.org/packages/" s))
+          ("org"   . ,(format "http%s://orgmode.org/elpa/"   s)))
+        package-archives))
 
   ;; Refresh package.el the first time you call `package-install', so it's still
   ;; trivially usable. Remember to run 'doom sync' to purge them; they can

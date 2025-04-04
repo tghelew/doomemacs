@@ -41,7 +41,7 @@ TYPE should be a keyword of any of the known doom-*-error errors (e.g. :font,
 (defvar doom-log-level
   (if init-file-debug
       (if-let* ((level (getenv-internal "DEBUG"))
-                (level (string-to-number level))
+                (level (if (string-empty-p level) 1 (string-to-number level)))
                 ((not (zerop level))))
           level
         2)
@@ -708,8 +708,10 @@ See `general-key-dispatch' for what other arguments it accepts in BRANCHES."
 
 
 ;;; Mutation
+;; DEPRECATED: Remove in v3.0
 (defmacro appendq! (sym &rest lists)
   "Append LISTS to SYM in place."
+  (declare (obsolete "Use `cl-callf2' instead" "3.0.0"))
   `(setq ,sym (append ,sym ,@lists)))
 
 (defmacro setq! (&rest settings)
@@ -723,10 +725,12 @@ Unlike `setopt', this won't needlessly pull in dependencies."
             collect `(funcall (or (get ',var 'custom-set) #'set-default-toplevel-value)
                               ',var ,val))))
 
+;; DEPRECATED: Remove in v3.0
 (defmacro delq! (elt list &optional fetcher)
   "`delq' ELT from LIST in-place.
 
 If FETCHER is a function, ELT is used as the key in LIST (an alist)."
+  (declare (obsolete "Use `cl-callf2' or `alist-get' instead" "3.0.0"))
   `(setq ,list (delq ,(if fetcher
                           `(funcall ,fetcher ,elt ,list)
                         elt)
@@ -739,8 +743,10 @@ This is a variadic `cl-pushnew'."
     `(dolist (,var (list ,@values) (with-no-warnings ,place))
        (cl-pushnew ,var ,place :test #'equal))))
 
+;; DEPRECATED: Remove in v3.0
 (defmacro prependq! (sym &rest lists)
   "Prepend LISTS to SYM in place."
+  (declare (obsolete "Use `cl-callf2' instead" "3.0.0"))
   `(setq ,sym (append ,@lists ,sym)))
 
 
@@ -839,7 +845,7 @@ to reverse this and trigger `after!' blocks at a more reasonable time."
   (let ((advice-fn (intern (format "doom--defer-feature-%s-a" feature)))
         (fns (or fns (list feature))))
     `(progn
-       (delq! ',feature features)
+       (cl-callf2 delq ',feature features)
        (defadvice! ,advice-fn (&rest _)
          :before ',fns
          ;; Some plugins (like yasnippet) will invoke a fn early to parse
@@ -954,7 +960,10 @@ If N and M = 1, there's no benefit to using this macro over `remove-hook'.
   (macroexp-progn
    (cl-loop for (var val hook fn) in (doom--setq-hook-fns hooks var-vals)
             collect `(defun ,fn (&rest _)
-                       ,(format "%s = %s" var (pp-to-string val))
+                       ,(format "%s = %s" var
+                                (let ((print-level nil)
+                                      (print-length nil))
+                                  (prin1-to-string val)))
                        (setq-local ,var ,val))
             collect `(add-hook ',hook #',fn -90))))
 
@@ -995,8 +1004,8 @@ DOCSTRING and BODY are as in `defun'.
 (defmacro undefadvice! (symbol _arglist &optional docstring &rest body)
   "Undefine an advice called SYMBOL.
 
-This has the same signature as `defadvice!' an exists as an easy undefiner when
-testing advice (when combined with `rotate-text').
+This has the same signature as `defadvice!' and exists as an easy undefiner when
+interactively testing (and toggling) advice.
 
 \(fn SYMBOL ARGLIST &optional DOCSTRING &rest [WHERE PLACES...] BODY\)"
   (declare (doc-string 3) (indent defun))
